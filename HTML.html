@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <link rel="manifest" href="<?= ScriptApp.getService().getUrl() ?>?page=manifest">
+    <meta name="theme-color" content="#0d47a1">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <title>ADDSS Attendance System</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode/minified/html5-qrcode.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-color: #0d47a1;
+            --secondary-color: #1976d2;
+            --background-color: #f4f7f9;
+            --card-background: #ffffff;
+            --text-color: #333333;
+            --subtle-text-color: #555;
+            --border-color: #e0e0e0;
+            --success-color: #2e7d32;
+            --error-color: #d32f2f;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        html {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        .header {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .header img {
+            max-width: 150px;
+            height: auto;
+        }
+        .header h1 {
+            font-size: 1.3em;
+            line-height: 1.2;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin: 5px 0 0 0;
+            text-align: center;
+        }
+
+        #reader {
+            background: black;
+            border-radius: 12px;
+            border: 5px solid var(--card-background);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+        #reader.success-scan {
+             border-color: var(--success-color);
+        }
+
+        #status-message {
+            font-size: 1.1em;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+        .status-scanning { background-color: #e3f2fd; color: #0d47a1; }
+        .status-success { background-color: #e8f5e9; color: var(--success-color); }
+        .status-error { background-color: #ffebee; color: var(--error-color); }
+        .status-submitting { background-color: #fffde7; color: #f57f17; }
+
+        #result-container {
+            background: var(--card-background);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border-color);
+            text-align: left;
+            margin-bottom: 20px;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-right: 15px;
+        }
+        .detail-value {
+            color: var(--subtle-text-color);
+            text-align: right;
+        }
+
+        #submit-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(13, 71, 161, 0.2);
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        #submit-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(13, 71, 161, 0.3);
+        }
+        #submit-button:disabled {
+            background: #bdbdbd;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        
+        <header class="header">
+            <img src="https://drive.google.com/thumbnail?id=1I9tsVQtpBFjdNuG6cpfO6WkXV219Md5E" alt="ADDSS Logo">
+            <h1>Ateneo de Davao Scholars Society<br>Attendance System</h1>
+        </header>
+
+        <div id="reader"></div>
+        <div id="status-message"></div>
+        
+        <div id="result-container" style="display: none;">
+            <div class="detail-item">
+                <span class="detail-label">Name</span>
+                <span id="result-name" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">School</span>
+                <span id="result-school" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Course</span>
+                <span id="result-course" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+                <span class="detail-label">Grant</span>
+                <span id="result-grant" class="detail-value"></span>
+            </div>
+        </div>
+
+        <button id="submit-button" onclick="submitData()" style="display: none;">Submit Attendance</button>
+
+    </div>
+
+    <script>
+        let scannedData = null;
+        const html5QrCode = new Html5Qrcode("reader");
+
+        // UI Element References
+        const readerEl = document.getElementById('reader');
+        const statusMessageEl = document.getElementById('status-message');
+        const resultContainerEl = document.getElementById('result-container');
+        const submitButtonEl = document.getElementById('submit-button');
+
+        function updateStatus(message, statusClass) {
+            statusMessageEl.textContent = message;
+            statusMessageEl.className = 'status-message';
+            statusMessageEl.classList.add(statusClass);
+        }
+
+        const qrCodeSuccessCallback = (decodedText, decodedResult) => {
+            html5QrCode.stop().then(() => {
+                try {
+                    const data = JSON.parse(decodedText);
+                    if (data.NAME && data.SCHOOL && data.COURSE && data.GRANT) {
+                        scannedData = data;
+                        updateStatus('✅ QR Code Detected!', 'status-success');
+                        readerEl.classList.add('success-scan');
+
+                        document.getElementById('result-name').textContent = data.NAME;
+                        document.getElementById('result-school').textContent = data.SCHOOL;
+                        document.getElementById('result-course').textContent = data.COURSE;
+                        document.getElementById('result-grant').textContent = data.GRANT;
+                        
+                        resultContainerEl.style.display = 'block';
+                        submitButtonEl.style.display = 'block';
+                    } else {
+                        throw new Error("Invalid QR code format. Required fields are missing.");
+                    }
+                } catch (e) {
+                    updateStatus(e.message, 'status-error');
+                    setTimeout(restartScanner, 2000);
+                }
+            }).catch(err => console.error("Failed to stop the scanner.", err));
+        };
+        
+        const config = { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 }
+        };
+
+        function startScanner() {
+            updateStatus('🔍 Point camera at a QR code...', 'status-scanning');
+            readerEl.classList.remove('success-scan');
+            html5QrCode.start({ facingMode: "environment" }, config, qrCodeSuccessCallback)
+                .catch(err => {
+                    updateStatus(`Scanner Error: Could not start camera.`, 'status-error');
+                    console.error(`Unable to start scanning, error: ${err}`);
+                });
+        }
+        
+        function restartScanner() {
+            scannedData = null;
+            resultContainerEl.style.display = 'none';
+            submitButtonEl.style.display = 'none';
+            submitButtonEl.disabled = false;
+            submitButtonEl.innerHTML = 'Submit Attendance';
+            startScanner();
+        }
+
+        function submitData() {
+            if (scannedData) {
+                submitButtonEl.disabled = true;
+                submitButtonEl.innerHTML = '<span class="spinner"></span>Submitting...';
+                updateStatus('Submitting attendance...', 'status-submitting');
+
+                google.script.run
+                    .withSuccessHandler(response => {
+                        updateStatus(`✅ ${response}`, 'status-success');
+                        resultContainerEl.style.display = 'none';
+                        submitButtonEl.style.display = 'none';
+                        setTimeout(restartScanner, 2000);
+                    })
+                    .withFailureHandler(error => {
+                        updateStatus(`Error: ${error.message}`, 'status-error');
+                        submitButtonEl.disabled = false;
+                        submitButtonEl.innerHTML = 'Submit Attendance';
+                    })
+                    .appendToSheet(scannedData);
+            }
+        }
+
+        window.onload = startScanner;
+    </script>
+
+</body>
+</html>
